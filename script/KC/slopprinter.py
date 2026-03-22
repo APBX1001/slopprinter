@@ -59,7 +59,7 @@ def ZROK_enable(token):
         SyS(f'zrok enable {token}')
         print()
 
-def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=None):
+def webui_launch(launch_args, ngrok_token=None, zrok_token=None):
     ui = json.load((Path(HOMEPATH) / 'gutris1/marking.json').open('r')).get('ui')
 
     if ui in ['Forge-Classic', 'Forge-Neo']:
@@ -79,8 +79,6 @@ def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=N
         else:
             SyS('pip install -q "pydantic>=1.9.0,<2.0.0"')
             port = 7801
-            iRON['SWARMPATH'] = str(CWD)
-            iRON['SWARM_NO_VENV'] = 'true'
             cmd = f'bash ./launch-linux.sh {launch_args}'
 
     cloudflared = f'cl tunnel --url localhost:{port}'
