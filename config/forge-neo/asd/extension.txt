@@ -7,10 +7,6 @@ https://github.com/gutris1/sd-image-scripts
 https://github.com/gutris1/sd-webui-misc
 https://github.com/anxety-solo/sd-aspect-ratio-plus
 https://github.com/anxety-solo/sd-civitai-extension
-https://github.com/Haoming02/sd-forge-chunk-weights
-https://github.com/Haoming02/sd-forge-layerdiffusion
-https://github.com/Haoming02/sd-forge-negpip
-https://github.com/Haoming02/sd-forge-blockcache
 https://github.com/Haoming02/sd-forge-couple
 https://github.com/Haoming02/sd-webui-prompt-format
 https://github.com/mix1009/model-keyword
