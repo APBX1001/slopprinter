@@ -117,6 +117,6 @@ if __name__ == '__main__':
 
     try:
         Trashing()
-        webui_launch(launch_args, args.skip_comfyui_check, args.N, args.Z)
+        webui_launch(launch_args, args.N, args.Z)
     except KeyboardInterrupt:
         pass
