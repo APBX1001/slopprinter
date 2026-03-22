@@ -1,5 +1,4 @@
 {
-    "gradio_theme": "NoCrypt/miku",
     "lora_preferred_name": "Filename",
     "samples_filename_pattern": "[datetime<%M%S>]",
     "show_progressbar": true,
