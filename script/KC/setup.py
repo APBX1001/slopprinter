@@ -185,7 +185,7 @@ def sym_link(U, M):
 
 def webui_req(U, W, M):
     CD(W)
-    pull(f'https://github.com/gutris1/segsmaker {U.lower()} {W}')
+    pull(f'https://github.com/APBX1001/slopprinter {U.lower()} {W}')
     
     sym_link(U, M)
     install_tunnel()
