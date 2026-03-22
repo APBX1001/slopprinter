@@ -1,5 +1,4 @@
 https://github.com/Anzhc/aadetailer-reforge
-https://github.com/DominikDoom/a1111-sd-webui-tagcomplete
 https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
 https://github.com/gutris1/sd-hub
 https://github.com/gutris1/sd-image-info
