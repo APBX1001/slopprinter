@@ -25,7 +25,7 @@ iRON['PYTHONWARNINGS'] = 'ignore'
 def Trashing():
     run = lambda cmd: subprocess.run(shlex.split(cmd), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    dirs1 = ['A1111', 'Forge', 'ReForge', 'Forge-Classic', 'Forge-Neo','ComfyUI', 'SwarmUI']
+    dirs1 = ['Forge-Classic', 'Forge-Neo']
     dirs2 = ['ckpt', 'lora', 'controlnet', 'svd', 'z123']
 
     paths = [Path(HOMEPATH) / name for name in dirs1] + [Path(TEMPPATH) / name for name in dirs2]
@@ -62,17 +62,13 @@ def ZROK_enable(token):
 def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=None):
     ui = json.load((Path(HOMEPATH) / 'gutris1/marking.json').open('r')).get('ui')
 
-    if ui in ['A1111', 'Forge', 'ReForge', 'Forge-Classic', 'Forge-Neo']:
+    if ui in ['Forge-Classic', 'Forge-Neo']:
         port = 7860
         SyS(f"echo -n {int(time.time()) + 3600} > {CWD / 'asd/pinggytimer.txt'}")
         launch_args += ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'
 
         if '--share' in launch_args: launch_args = launch_args.replace('--share', '')
         if ENVNAME == 'Kaggle': launch_args += f' --encrypt-pass={PW}'
-
-        if ui == 'Forge' and not (CWD / 'FT.txt').exists():
-            SyS('pip uninstall -qy transformers')
-            (CWD / 'FT.txt').write_text('blyat')
 
         if ui == 'Forge-Neo':
             iRON['MPLBACKEND'] = 'agg'
@@ -81,22 +77,6 @@ def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=N
         iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
 
         cmd = f'python3 launch.py {launch_args}'
-
-    elif ui in ['ComfyUI', 'SwarmUI']:
-        iRON['MPLBACKEND'] = 'agg'
-
-        if ui == 'ComfyUI':
-            cfg = Path(HOMEPATH) / 'ComfyUI/custom_nodes/was-node-suite-comfyui/was_suite_config.json'
-            ffmpeg = shutil.which('ffmpeg')
-
-            if cfg.exists() and ffmpeg:
-                c = json.loads(cfg.read_text(encoding='utf-8'))
-                c['ffmpeg_bin_path'] = ffmpeg
-                cfg.write_text(json.dumps(c, indent=2), encoding='utf-8')
-
-            port = 8188
-            skip_comfyui_check or (SyS('python3 apotek.py'), clear_output(wait=True))
-            cmd = f'python3 main.py {launch_args}'
 
         else:
             SyS('pip install -q "pydantic>=1.9.0,<2.0.0"')
@@ -133,7 +113,6 @@ def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=N
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='nothing to read here')
-    parser.add_argument('--skip-comfyui-check', action='store_true', help='Skip checking custom node dependencies for ComfyUI')
     parser.add_argument('--N', type=str, help='NGROK tunnel (pass a token or do nothing)', default=None)
     parser.add_argument('--Z', type=str, help='ZROK tunnel (pass a token or do nothing)', default=None)
 
