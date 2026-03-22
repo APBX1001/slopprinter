@@ -72,11 +72,9 @@ def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=N
 
         if ui == 'Forge-Neo':
             iRON['MPLBACKEND'] = 'agg'
-
-        iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
-        iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
-
-        cmd = f'python3 launch.py {launch_args}'
+            iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
+            iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
+            cmd = f'python3 launch.py {launch_args}'
 
         else:
             SyS('pip install -q "pydantic>=1.9.0,<2.0.0"')
