@@ -33,9 +33,9 @@ def getENV():
 
 def getArgs():
     parser = argparse.ArgumentParser(description='WebUI Installer Script for Kaggle and Google Colab')
-    parser.add_argument('--webui', required=True, help='available webui: Forge-Classic, Forge-Neo')
-    parser.add_argument('--civitai_key', required=True, help='your CivitAI API key')
-    parser.add_argument('--hf_read_token', default=None, help='your Huggingface READ Token (optional)')
+    parser.add_argument('--webui', required=True, help='Available WebUI: Forge-Classic, Forge-Neo')
+    parser.add_argument('--civitai_key', required=True, help='CivitAI API Key (REQUIRED)')
+    parser.add_argument('--hf_read_token', default=None, help='Huggingface READ Token (Optional)')
 
     args, unknown = parser.parse_known_args()
 
@@ -44,8 +44,8 @@ def getArgs():
     arg3 = args.hf_read_token.strip() if args.hf_read_token else ''
 
     if not any(arg1 == option.lower() for option in WEBUI_LIST):
-        print(f'{ERROR}: invalid webui option: "{args.webui}"')
-        print(f'Available webui options: {", ".join(WEBUI_LIST)}')
+        print(f'{ERROR}: Invalid WebUI option: "{args.webui}"')
+        print(f'Available WebUI options: {", ".join(WEBUI_LIST)}')
         return None, None, None
 
     if not arg2:
@@ -88,7 +88,7 @@ def getPython():
     fn = Path(cfg['url']).name
 
     CD(Path(ENVBASE).parent)
-    print(f"\n{ARROW} installing Python Portable {cfg['v']}")
+    print(f"\n{ARROW} Installing Python Portable {cfg['v']}")
 
     SyS('sudo apt-get -qq -y install aria2 pv lz4 > /dev/null 2>&1')
 
@@ -192,21 +192,14 @@ def webui_req(U, W, M):
 
     scripts = [
         f'https://github.com/gutris1/segsmaker/raw/main/script/controlnet.py {W}/asd',
-        f'https://github.com/gutris1/segsmaker/raw/main/script/KC/segsmaker.py {W}'
+        f'https://github.com/APBX1001/slopprinter/raw/main/script/KC/slopprinter.py {W}'
     ]
 
     u = M / 'ESRGAN'
 
     upscalers = [
         f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-UltraSharp.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-AnimeSharp.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_NMKD-Superscale-SP_178000_G.pth {u}',
-        f'https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/8x_NMKD-Superscale_150000_G.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_RealisticRescaler_100000_G.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/8x_RealESRGAN.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_foolhardy_Remacri.pth {u}',
-        f'https://huggingface.co/subby2006/NMKD-YandereNeoXL/resolve/main/4x_NMKD-YandereNeoXL_200k.pth {u}',
-        f'https://huggingface.co/subby2006/NMKD-UltraYandere/resolve/main/4x_NMKD-UltraYandere_300k.pth {u}'
+        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-AnimeSharp.pth {u}'
     ]
 
     line = scripts + upscalers
@@ -216,12 +209,10 @@ def webui_req(U, W, M):
     SyS(f'rm -f {W}/html/card-no-preview.{e}')
 
     for ass in [
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/card-no-preview.png {W}/html card-no-preview.{e}',
-        f'https://github.com/gutris1/segsmaker/raw/main/config/NoCrypt_miku.json {W}/tmp/gradio_themes',
-        f'https://github.com/gutris1/segsmaker/raw/main/config/user.css {W} user.css'
+        f'https://huggingface.co/gutris1/webui/resolve/main/misc/card-no-preview.png {W}/html card-no-preview.{e}'
+        f'https://github.com/APBX1001/slopprinter/raw/main/config/user.css {W} user.css'
     ]: download(ass)
 
-    # config.json only applies to Forge-Classic in the original logic
     if U == 'Forge-Classic': 
         download(f'https://github.com/gutris1/segsmaker/raw/main/config/config.json {W} config.json')
 
@@ -239,14 +230,6 @@ def webui_installation(U, W):
     V = M / 'VAE'
 
     webui_req(U, W, M)
-
-    extras = [
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/embeddingsXL.zip {W}',
-        f'https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl.vae.safetensors {V} sdxl_vae.safetensors'
-    ]
-
-    for i in extras: download(i)
-    SyS(f"unzip -qo {W / 'embeddingsXL.zip'} -d {E} && rm {W / 'embeddingsXL.zip'}")
 
     webui_extension(U, W, M)
 
@@ -300,7 +283,7 @@ def notebook_scripts():
         (nenen, f'wget -qO {nenen} https://github.com/gutris1/segsmaker/raw/main/script/nenen88.py'),
         (melon, f'wget -qO {melon} https://github.com/gutris1/segsmaker/raw/main/script/melon00.py'),
         (STR / 'cupang.py', f'wget -qO {STR}/cupang.py https://github.com/gutris1/segsmaker/raw/main/script/cupang.py'),
-        (MRK, f'wget -qO {MRK} https://github.com/gutris1/segsmaker/raw/main/script/marking.py')
+        (MRK, f'wget -qO {MRK} https://github.com/APBX1001/slopprinter/raw/main/script/marking.py')
     ]
 
     [SyS(y) for x, y in z if not Path(x).exists()]
