@@ -15,16 +15,11 @@ CD = os.chdir
 iRON = os.environ
 
 REPO = {
-    'A1111': 'https://github.com/gutris1/A1111',
-    'Forge': 'https://github.com/lllyasviel/stable-diffusion-webui-forge Forge',
-    'ReForge': '-b main-old https://github.com/Panchovix/stable-diffusion-webui-reForge ReForge',
     'Forge-Classic': '-b classic https://github.com/Haoming02/sd-webui-forge-classic Forge-Classic',
-    'Forge-Neo': '-b neo https://github.com/Haoming02/sd-webui-forge-classic Forge-Neo',
-    'ComfyUI': 'https://github.com/comfyanonymous/ComfyUI',
-    'SwarmUI': 'https://github.com/mcmonkeyprojects/SwarmUI'
+    'Forge-Neo': '-b neo https://github.com/Haoming02/sd-webui-forge-classic Forge-Neo'
 }
 
-WEBUI_LIST = ['A1111', 'Forge', 'ReForge', 'Forge-Classic', 'Forge-Neo', 'ComfyUI', 'SwarmUI']
+WEBUI_LIST = ['Forge-Classic', 'Forge-Neo']
 
 def getENV():
     env = {
@@ -38,7 +33,7 @@ def getENV():
 
 def getArgs():
     parser = argparse.ArgumentParser(description='WebUI Installer Script for Kaggle and Google Colab')
-    parser.add_argument('--webui', required=True, help='available webui: A1111, Forge, ReForge, Forge-Classic, Forge-Neo, ComfyUI, SwarmUI')
+    parser.add_argument('--webui', required=True, help='available webui: Forge-Classic, Forge-Neo')
     parser.add_argument('--civitai_key', required=True, help='your CivitAI API key')
     parser.add_argument('--hf_read_token', default=None, help='your Huggingface READ Token (optional)')
 
@@ -70,20 +65,11 @@ def getArgs():
     return selected_ui, arg2, arg3
 
 def getPython():
-    cs = {
-        'v': '3.13.12',
-        'url': 'https://huggingface.co/gutris1/webui/resolve/main/env/KC-ComfyUI-SwarmUI-Python31312-Torch2100-cu130.tar.lz4'
-    }
-
     c = {
         'default': {
             'v': '3.10.15',
             'url': 'https://huggingface.co/gutris1/webui/resolve/main/env/KC-Python310-Torch260-cu124.tar.lz4'
         },
-
-        'ComfyUI': cs,
-        'SwarmUI': cs,
-
         'Forge-Classic': {
             'v': '3.11.13',
             'url': 'https://huggingface.co/gutris1/webui/resolve/main/env/KC-FC-Python311-Torch260-cu124.tar.lz4'
@@ -170,52 +156,6 @@ def install_tunnel():
 
 def sym_link(U, M):
     configs = {
-        'A1111': {
-            'sym': [
-                f"rm -rf {M / 'Stable-diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'ControlNet'} {TMP}/*"
-            ],
-            'links': [
-                (TMP / 'ckpt', M / 'Stable-diffusion/tmp_ckpt'),
-                (TMP / 'lora', M / 'Lora/tmp_lora'),
-                (TMP / 'controlnet', M / 'ControlNet')
-            ]
-        },
-
-        'Forge': {
-            'sym': [
-                f"rm -rf {M / 'Stable-diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'ControlNet'}",
-                f"rm -rf {M / 'svd'} {M / 'z123'} {M / 'clip'} {M / 'clip_vision'} {M / 'diffusers'}",
-                f"rm -rf {M / 'diffusion_models'} {M / 'text_encoder'} {M / 'unet'} {TMP}/*"
-            ],
-            'links': [
-                (TMP / 'ckpt', M / 'Stable-diffusion/tmp_ckpt'),
-                (TMP / 'lora', M / 'Lora/tmp_lora'),
-                (TMP / 'controlnet', M / 'ControlNet'),
-                (TMP / 'z123', M / 'z123'),
-                (TMP / 'svd', M / 'svd'),
-                (TMP / 'clip', M / 'clip'),
-                (TMP / 'clip_vision', M / 'clip_vision'),
-                (TMP / 'diffusers', M / 'diffusers'),
-                (TMP / 'diffusion_models', M / 'diffusion_models'),
-                (TMP / 'text_encoders', M / 'text_encoder'),
-                (TMP / 'unet', M / 'unet')
-            ]
-        },
-
-        'ReForge': {
-            'sym': [
-                f"rm -rf {M / 'Stable-diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'ControlNet'}",
-                f"rm -rf {M / 'svd'} {M / 'z123'} {TMP}/*"
-            ],
-            'links': [
-                (TMP / 'ckpt', M / 'Stable-diffusion/tmp_ckpt'),
-                (TMP / 'lora', M / 'Lora/tmp_lora'),
-                (TMP / 'controlnet', M / 'ControlNet'),
-                (TMP / 'z123', M / 'z123'),
-                (TMP / 'svd', M / 'svd')
-            ]
-        },
-
         'Forge-Classic': {
             'sym': [
                 f"rm -rf {M / 'Stable-diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'ControlNet'}"
@@ -226,7 +166,6 @@ def sym_link(U, M):
                 (TMP / 'controlnet', M / 'ControlNet')
             ]
         },
-
         'Forge-Neo': {
             'sym': [
                 f"rm -rf {M / 'Stable-diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'ControlNet'}"
@@ -236,62 +175,18 @@ def sym_link(U, M):
                 (TMP / 'lora', M / 'Lora/tmp_lora'),
                 (TMP / 'controlnet', M / 'ControlNet')
             ]
-        },
-
-        'ComfyUI': {
-            'sym': [
-                f"rm -rf {M / 'checkpoints/tmp_ckpt'} {M / 'loras/tmp_lora'} {M / 'controlnet'}",
-                f"rm -rf {M / 'clip'} {M / 'clip_vision'} {M / 'diffusers'} {M / 'diffusion_models'}",
-                f"rm -rf {M / 'text_encoders'} {M / 'unet'} {TMP}/*"
-            ],
-            'links': [
-                (TMP / 'ckpt', M / 'checkpoints/tmp_ckpt'),
-                (TMP / 'lora', M / 'loras/tmp_lora'),
-                (TMP / 'controlnet', M / 'controlnet'),
-                (TMP / 'clip', M / 'clip'),
-                (TMP / 'clip_vision', M / 'clip_vision'),
-                (TMP / 'diffusers', M / 'diffusers'),
-                (TMP / 'diffusion_models', M / 'diffusion_models'),
-                (TMP / 'text_encoders', M / 'text_encoders'),
-                (TMP / 'unet', M / 'unet')
-            ]
-        },
-
-        'SwarmUI': {
-            'sym': [
-                f"rm -rf {M / 'Stable-Diffusion/tmp_ckpt'} {M / 'Lora/tmp_lora'} {M / 'controlnet'}",
-                f"rm -rf {M / 'clip'} {M / 'unet'} {TMP}/*"
-            ],
-            'links': [
-                (TMP / 'ckpt', M / 'Stable-Diffusion/tmp_ckpt'),
-                (TMP / 'lora', M / 'Lora/tmp_lora'),
-                (TMP / 'controlnet', M / 'controlnet'),
-                (TMP / 'clip', M / 'clip'),
-                (TMP / 'unet', M / 'unet')
-            ]
         }
     }
 
     cfg = configs.get(U)
     [SyS(f'{cmd}') for cmd in cfg['sym']]
-    if U not in ['ComfyUI', 'SwarmUI']: [(M / d).mkdir(parents=True, exist_ok=True) for d in ['Lora', 'ESRGAN']]
+    [(M / d).mkdir(parents=True, exist_ok=True) for d in ['Lora', 'ESRGAN']]
     [SyS(f'ln -s {src} {tg}') for src, tg in cfg['links']]
 
 def webui_req(U, W, M):
     CD(W)
-
-    if U != 'SwarmUI':
-        pull(f'https://github.com/gutris1/segsmaker {U.lower()} {W}')
-    else:
-        M.mkdir(parents=True, exist_ok=True)
-        for sub in ['Stable-Diffusion', 'Lora', 'Embeddings', 'VAE', 'upscale_models']:
-            (M / sub).mkdir(parents=True, exist_ok=True)
-
-        download(f'https://dot.net/v1/dotnet-install.sh {W}')
-        dotnet = W / 'dotnet-install.sh'
-        dotnet.chmod(0o755)
-        SyS('bash ./dotnet-install.sh --channel 8.0')
-
+    pull(f'https://github.com/gutris1/segsmaker {U.lower()} {W}')
+    
     sym_link(U, M)
     install_tunnel()
 
@@ -300,7 +195,7 @@ def webui_req(U, W, M):
         f'https://github.com/gutris1/segsmaker/raw/main/script/KC/segsmaker.py {W}'
     ]
 
-    u = M / 'upscale_models' if U in ['ComfyUI', 'SwarmUI'] else M / 'ESRGAN'
+    u = M / 'ESRGAN'
 
     upscalers = [
         f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-UltraSharp.pth {u}',
@@ -317,41 +212,31 @@ def webui_req(U, W, M):
     line = scripts + upscalers
     for item in line: download(item)
 
-    if U not in ['SwarmUI', 'ComfyUI']:
-        e = 'jpg' if U in ['Forge-Classic', 'Forge-Neo'] else 'png'
-        SyS(f'rm -f {W}/html/card-no-preview.{e}')
+    e = 'jpg'
+    SyS(f'rm -f {W}/html/card-no-preview.{e}')
 
-        for ass in [
-            f'https://huggingface.co/gutris1/webui/resolve/main/misc/card-no-preview.png {W}/html card-no-preview.{e}',
-            f'https://github.com/gutris1/segsmaker/raw/main/config/NoCrypt_miku.json {W}/tmp/gradio_themes',
-            f'https://github.com/gutris1/segsmaker/raw/main/config/user.css {W} user.css'
-        ]: download(ass)
+    for ass in [
+        f'https://huggingface.co/gutris1/webui/resolve/main/misc/card-no-preview.png {W}/html card-no-preview.{e}',
+        f'https://github.com/gutris1/segsmaker/raw/main/config/NoCrypt_miku.json {W}/tmp/gradio_themes',
+        f'https://github.com/gutris1/segsmaker/raw/main/config/user.css {W} user.css'
+    ]: download(ass)
 
-        if U not in ['Forge', 'Forge-Neo']: download(f'https://github.com/gutris1/segsmaker/raw/main/config/config.json {W} config.json')
+    # config.json only applies to Forge-Classic in the original logic
+    if U == 'Forge-Classic': 
+        download(f'https://github.com/gutris1/segsmaker/raw/main/config/config.json {W} config.json')
 
 def webui_extension(U, W, M):
-    EXT = W / 'custom_nodes' if U == 'ComfyUI' else W / 'extensions'
+    EXT = W / 'extensions'
     CD(EXT)
 
-    if U == 'ComfyUI':
-        say('<br><b>【{red} Installing Custom Nodes{d} 】{red}</b>')
-        clone(str(W / 'asd/custom_nodes.txt'))
-        print()
-
-        for faces in [
-            f'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth {M}/facerestore_models',
-            f'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth {M}/facerestore_models'
-        ]: download(faces)
-
-    else:
-        say('<br><b>【{red} Installing Extensions{d} 】{red}</b>')
-        clone(str(W / 'asd/extension.txt'))
-        if ENVNAME == 'Kaggle': clone('https://github.com/gutris1/sd-image-encryption')
+    say('<br><b>【{red} Installing Extensions{d} 】{red}</b>')
+    clone(str(W / 'asd/extension.txt'))
+    if ENVNAME == 'Kaggle': clone('https://github.com/gutris1/sd-image-encryption')
 
 def webui_installation(U, W):
-    M = W / 'Models' if U == 'SwarmUI' else W / 'models'
-    E = M / 'Embeddings' if U == 'SwarmUI' else (M / 'embeddings' if U in ['Forge-Classic', 'Forge-Neo', 'ComfyUI'] else W / 'embeddings')
-    V = M / 'vae' if U == 'ComfyUI' else M / 'VAE'
+    M = W / 'models'
+    E = M / 'embeddings'
+    V = M / 'VAE'
 
     webui_req(U, W, M)
 
@@ -363,7 +248,7 @@ def webui_installation(U, W):
     for i in extras: download(i)
     SyS(f"unzip -qo {W / 'embeddingsXL.zip'} -d {E} && rm {W / 'embeddingsXL.zip'}")
 
-    if U != 'SwarmUI': webui_extension(U, W, M)
+    webui_extension(U, W, M)
 
 def webui_selection(ui):
     with output:
@@ -383,11 +268,6 @@ def webui_selection(ui):
 
 def webui_installer():
     branchs = {
-        'A1111': 'master',
-        'ComfyUI': 'master',
-        'SwarmUI': 'master',
-        'Forge': 'main',
-        'ReForge': 'main',
         'Forge-Classic': 'classic',
         'Forge-Neo': 'neo',
     }
@@ -434,6 +314,7 @@ def notebook_scripts():
     sys.path.append(str(STR))
 
     for scripts in [nenen, melon, KANDANG, MRK]: get_ipython().run_line_magic('run', str(scripts))
+
 
 ENVNAME, ENVBASE, ENVHOME = getENV()
 
