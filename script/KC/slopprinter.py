@@ -70,16 +70,10 @@ def webui_launch(launch_args, ngrok_token=None, zrok_token=None):
         if '--share' in launch_args: launch_args = launch_args.replace('--share', '')
         if ENVNAME == 'Kaggle': launch_args += f' --encrypt-pass={PW}'
 
-        if ui == 'Forge-Neo':
-            iRON['MPLBACKEND'] = 'agg'
-            iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
-            iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
-            cmd = f'python3 launch.py {launch_args}'
-
-        else:
-            SyS('pip install -q "pydantic>=1.9.0,<2.0.0"')
-            port = 7801
-            cmd = f'bash ./launch-linux.sh {launch_args}'
+        iRON['MPLBACKEND'] = 'agg'
+        iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
+        iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
+        cmd = f'python3 launch.py {launch_args}'
 
     cloudflared = f'cl tunnel --url localhost:{port}'
     pinggy = f'ssh -o StrictHostKeyChecking=no -p 80 -R0:localhost:{port} a.pinggy.io'
