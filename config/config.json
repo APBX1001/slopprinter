@@ -13,9 +13,7 @@
     "grid_format": "png",
     "quicksettings_list": [
         "sd_model_checkpoint",
-        "sd_vae",
-        "randn_source",
-        "emphasis"
+        "sd_vae"
     ],
     "ui_tab_order": [
         "txt2img",
@@ -23,11 +21,10 @@
         "Extras",
         "Image Info",
         "HUB",
-        "SuperMerger"
+        "Extensions",
+        "Settings"
     ],
     "hidden_tabs": [
-        "PNG Info",
-        "Train",
-        "Checkpoint Merger"
+        "PNG Info"
     ]
 }
