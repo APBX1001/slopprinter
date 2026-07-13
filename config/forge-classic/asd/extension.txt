@@ -11,8 +11,7 @@ https://github.com/Haoming02/sd-webui-prompt-format
 https://github.com/Haoming02/sd-webui-auto-complete
 https://github.com/hako-mikan/sd-webui-regional-prompter
 https://github.com/mix1009/model-keyword
-https://github.com/Anzhc/aadetailer-reforge 4-adetailer
-https://github.com/viyiviyi/sd-encrypt-image
+https://github.com/Anzhc/aadetailer-reforge
 https://github.com/Tsukreya/Umi-AI-Wildcards
 https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
 
