@@ -21,10 +21,10 @@ def _args():
     PURPLE = '\033[38;5;135m'
     ERR = f'{PURPLE}[{RESET}{RED}ERROR{RESET}{PURPLE}]{RESET}'
 
-    L = ['A1111', 'Forge', 'ReForge', 'ReForge-old', 'Forge-Classic', 'Forge-Neo', 'ComfyUI', 'SwarmUI']
+    L = ['Forge-Classic', 'Forge-Neo']
 
     parser = argparse.ArgumentParser(description='WebUI Installer Script for Kaggle and Google Colab')
-    parser.add_argument('--webui', required=True, help='available webui: A1111, Forge, ReForge, ReForge-old, Forge-Classic, Forge-Neo, ComfyUI, SwarmUI')
+    parser.add_argument('--webui', required=True, help='Available WebUI: Forge-Classic, Forge-Neo')
     parser.add_argument('--civitai_key', required=True, help='your CivitAI API key')
     parser.add_argument('--hf_read_token', default=None, help='your Huggingface READ Token (optional)')
 
@@ -35,7 +35,7 @@ def _args():
     arg3 = args.hf_read_token.strip() if args.hf_read_token else ''
 
     if not any(arg1 == option.lower() for option in L):
-        print(f'{ERR}: invalid webui option: "{args.webui}"\nAvailable webui options: {", ".join(L)}')
+        print(f'{ERR}: Invalid WebUI option: "{args.webui}"\nAvailable WebUI options: {", ".join(L)}')
         return None, None, None
 
     if not arg2:
@@ -126,14 +126,10 @@ def _tunnels():
         SyS(f'rm -f {name}')
 
 def _symlinks(M):
-    UID['ReForge-old']['sym'] = UID['ReForge']['sym']
-    UID['ReForge-old']['links'] = UID['ReForge']['links']
-
     UID['Forge-Neo']['sym'] = UID['Forge-Classic']['sym']
     UID['Forge-Neo']['links'] = UID['Forge-Classic']['links']
 
-    if ui not in ('ComfyUI', 'SwarmUI'):
-        [(M / f).mkdir(parents=True, exist_ok=True) for f in ['Lora', 'ESRGAN']]
+    [(M / f).mkdir(parents=True, exist_ok=True) for f in ['Lora', 'ESRGAN']]
 
     t = HOME / 'tmp'
     SyS(f"rm -rf '{t}' && ln -s /tmp '{t}'")
@@ -146,21 +142,7 @@ def _symlinks(M):
 def _reqs(W, M):
     CD(W)
 
-    if ui != 'SwarmUI': pull(f'https://github.com/APBX1001/slopprinter {ui.lower()} {W}')
-
-    else:
-        M.mkdir(parents=True, exist_ok=True)
-
-        for f in [
-            'Stable-Diffusion',
-            'Lora',
-            'Embeddings',
-            'VAE',
-            'upscale_models',
-            'text_encoders'
-        ]: (M / f).mkdir(parents=True, exist_ok=True)
-
-        for a in ['update', 'install -y dotnet-sdk-8.0']: SyS(f'sudo apt-get -qq {a} > /dev/null 2>&1')
+    pull(f'https://github.com/APBX1001/slopprinter {ui.lower()} {W}')
 
     _symlinks(M)
     _tunnels()
@@ -172,41 +154,32 @@ def _reqs(W, M):
         f'{G}/script/KC/segsmaker.py {W}'
     ]
 
-    u = M / 'upscale_models' if ui in ['ComfyUI', 'SwarmUI'] else M / 'ESRGAN'
+    u = M / 'ESRGAN'
 
     upscalers = [
         f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-UltraSharp.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-AnimeSharp.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_NMKD-Superscale-SP_178000_G.pth {u}',
-        f'https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/8x_NMKD-Superscale_150000_G.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_RealisticRescaler_100000_G.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/8x_RealESRGAN.pth {u}',
-        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x_foolhardy_Remacri.pth {u}',
-        f'https://huggingface.co/subby2006/NMKD-YandereNeoXL/resolve/main/4x_NMKD-YandereNeoXL_200k.pth {u}',
-        f'https://huggingface.co/subby2006/NMKD-UltraYandere/resolve/main/4x_NMKD-UltraYandere_300k.pth {u}'
+        f'https://huggingface.co/gutris1/webui/resolve/main/misc/4x-AnimeSharp.pth {u}'
     ]
 
     line = scripts + upscalers
     for item in line: download(item)
 
-    if ui not in ['SwarmUI', 'ComfyUI']:
-        e = 'jpg' if ui in ['Forge-Classic', 'Forge-Neo'] else 'png'
-        SyS(f'rm -f {W}/html/card-no-preview.{e}')
+    e = 'jpg'
+    SyS(f'rm -f {W}/html/card-no-preview.{e}')
 
-        for i in [
-            f'https://raw.githubusercontent.com/anxety-solo/sdAIgen/refs/heads/main/__configs__/card-no-preview.png {W}/html card-no-preview.{e}',
-            f'{G}/config/user.css {W} user.css'
-        ]: download(i)
+    for i in [
+        f'https://raw.githubusercontent.com/anxety-solo/sdAIgen/refs/heads/main/__configs__/card-no-preview.png {W}/html card-no-preview.{e}',
+        f'{G}/config/user.css {W} user.css'
+    ]: download(i)
 
-        if ui not in ['Forge', 'Forge-Neo']: download(f'{G}/config/config.json {W} config.json')
+    if ui == 'Forge-Classic':
+        download(f'{G}/config/config.json {W} config.json')
 
 def _setup():
     WEBUI = HOME / ui
 
-    M = WEBUI / 'Models' if ui == 'SwarmUI' else WEBUI / 'models'
-    E = M / 'Embeddings' if ui == 'SwarmUI' else (M / 'embeddings' if ui in ['Forge-Classic', 'Forge-Neo', 'ComfyUI'] else WEBUI / 'embeddings')
-    V = M / 'vae' if ui == 'ComfyUI' else M / 'VAE'
-    EXT = WEBUI / 'custom_nodes' if ui == 'ComfyUI' else WEBUI / 'extensions'
+    M = WEBUI / 'models'
+    EXT = WEBUI / 'extensions'
 
     CD(HOME)
 
@@ -220,31 +193,12 @@ def _setup():
 
         _reqs(WEBUI, M)
 
-        for e in [
-            f'https://huggingface.co/gutris1/webui/resolve/main/misc/embeddingsXL.zip {WEBUI}',
-            f'https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/resolve/main/sdxl.vae.safetensors {V} sdxl_vae.safetensors'
-        ]: download(e)
+        CD(EXT)
 
-        SyS(f"unzip -qo {WEBUI / 'embeddingsXL.zip'} -d {E} && rm {WEBUI / 'embeddingsXL.zip'}")
+        say(f"<br><b>【{{red}} {ui.replace('-', ' ')} — Extensions{{d}} 】{{red}}</b>")
+        clone(str(WEBUI / 'asd/extension.txt'))
 
-        if ui != 'SwarmUI':
-            CD(EXT)
-
-            if ui == 'ComfyUI':
-                say('<br><b>【{red} ComfyUI — Custom Nodes{d} 】{red}</b>')
-                clone(str(WEBUI / 'asd/custom_nodes.txt'))
-                print()
-
-                for f in [
-                    f'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth {M}/facerestore_models',
-                    f'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth {M}/facerestore_models'
-                ]: download(f)
-
-            else:
-                say(f"<br><b>【{{red}} {ui.replace('-', ' ')} — Extensions{{d}} 】{{red}}</b>")
-                clone(str(WEBUI / 'asd/extension.txt'))
-
-                if KAGGLE: clone('https://github.com/gutris1/sd-image-encryption')
+        if KAGGLE: clone('https://github.com/gutris1/sd-image-encryption')
 
         say('<br><b>【{red} Done{d} 】{red}</b>')
         tempe()
@@ -278,6 +232,7 @@ def _scripts():
     sys.path.append(str(STR))
 
     for scripts in [nenen, melon, uid, MRK]: get_ipython().run_line_magic('run', str(scripts))
+
 
 G = 'https://raw.githubusercontent.com/APBX1001/slopprinter/main'
 
