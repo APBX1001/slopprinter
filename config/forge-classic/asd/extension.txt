@@ -14,4 +14,3 @@ https://github.com/mix1009/model-keyword
 https://github.com/Anzhc/aadetailer-reforge
 https://github.com/Tsukreya/Umi-AI-Wildcards
 https://github.com/Coyote-A/ultimate-upscale-for-automatic1111
-
