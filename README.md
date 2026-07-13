@@ -1,4 +1,4 @@
-# Slopprinter - Stable Diffusion WebUI
+# SlopPrinter - Stable Diffusion WebUI
 
 Available platforms: Kaggle
 
