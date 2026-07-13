@@ -194,8 +194,7 @@ def _reqs(W, M):
         SyS(f'rm -f {W}/html/card-no-preview.{e}')
 
         for i in [
-            f'https://huggingface.co/gutris1/webui/resolve/main/misc/card-no-preview.png {W}/html card-no-preview.{e}',
-            f'{G}/config/NoCrypt_miku.json {W}/tmp/gradio_themes',
+            f'https://raw.githubusercontent.com/anxety-solo/sdAIgen/refs/heads/main/__configs__/card-no-preview.png {W}/html card-no-preview.{e}',
             f'{G}/config/user.css {W} user.css'
         ]: download(i)
 
