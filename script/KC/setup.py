@@ -198,7 +198,7 @@ def _setup():
         say(f"<br><b>【{{red}} {ui.replace('-', ' ')} — Extensions{{d}} 】{{red}}</b>")
         clone(str(WEBUI / 'asd/extension.txt'))
 
-        if KAGGLE: clone('https://github.com/gutris1/sd-image-encryption')
+        if KAGGLE: clone('https://github.com/anxety-solo/sd-encrypt-image')
 
         say('<br><b>【{red} Done{d} 】{red}</b>')
         tempe()
