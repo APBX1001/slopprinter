@@ -146,7 +146,7 @@ def _symlinks(M):
 def _reqs(W, M):
     CD(W)
 
-    if ui != 'SwarmUI': pull(f'https://github.com/gutris1/segsmaker {ui.lower()} {W}')
+    if ui != 'SwarmUI': pull(f'https://github.com/APBX1001/slopprinter {ui.lower()} {W}')
 
     else:
         M.mkdir(parents=True, exist_ok=True)
