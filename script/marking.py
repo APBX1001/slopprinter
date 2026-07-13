@@ -20,60 +20,35 @@ SSL = 'SAGEMAKER_INTERNAL_IMAGE_URI' in iRON
 
 def _del():
     l = [
-        'WebUI', 'Models', 'WebUI_Output', 'Extensions', 'Embeddings', 'UNET', 'CLIP', 'VAE', 'TE',
-        'CKPT', 'LORA', 'TMP_CKPT', 'TMP_LORA', 'Forge_SVD', 'Controlnet_Widget', 'Upscalers'
+        'WebUI', 'Models', 'WebUI_Output', 'Extensions', 'Embeddings', 'VAE', 'TE',
+        'CKPT', 'LORA', 'TMP_CKPT', 'TMP_LORA', 'Controlnet_Widget', 'Upscalers'
     ]
     for v in l:
         if v in globals(): del globals()[v]
 
 
 def _var():
-    d = ('extensions', 'embeddings', 'VAE', 'Stable-diffusion', 'Lora', 'ESRGAN', None)
-
     F = {
-        'A1111': d,
-        'Forge': d,
-
-        'ReForge': (
-            'extensions', 'embeddings', 'VAE',
-            'Stable-diffusion', 'Lora', 'ESRGAN',
-            'text_encoders'
+        'Forge-Classic': (
+            'extensions', 'embeddings', 'VAE', 
+            'Stable-diffusion', 'Lora', 'ESRGAN', 
+            None
         ),
-
-        'ReForge-old': d,
-        'Forge-Classic': d,
 
         'Forge-Neo': (
-            'extensions', 'embeddings', 'VAE',
-            'Stable-diffusion', 'Lora', 'ESRGAN',
+            'extensions', 'embeddings', 'VAE', 
+            'Stable-diffusion', 'Lora', 'ESRGAN', 
             'text_encoder'
         ),
-
-        'ComfyUI': (
-            'custom_nodes', 'embeddings', 'vae',
-            'checkpoints', 'loras', 'upscale_models',
-            'text_encoders'
-        ),
-
-        'SwarmUI': (
-            'Extensions', 'Embeddings', 'VAE',
-            'Stable-Diffusion', 'Lora', 'upscale_models',
-            'text_encoders'
-        )
     }
 
     ext, embed, vae, ckpt, lora, ups, te = F[ui]
 
     WebUI = HOME / ui
-    Models = WebUI / ('Models' if ui == 'SwarmUI' else 'models')
+    Models = WebUI / 'models'
 
-    WebUI_Output = WebUI / (
-        'Output' if ui == 'SwarmUI'
-        else 'output' if ui in ['Forge-Classic', 'Forge-Neo', 'ComfyUI']
-        else 'outputs'
-    )
-
-    Extensions = (WebUI / 'src' / ext) if ui == 'SwarmUI' else (WebUI / ext)
+    WebUI_Output = WebUI / 'output'
+    Extensions = WebUI / ext
     Embeddings = Models / embed
 
     VAE = Models / vae
@@ -107,10 +82,6 @@ if ui:
     WebUI, Models, WebUI_Output, Extensions, Embeddings, VAE, CKPT, LORA, Upscalers, TE = _var()
 
     Controlnet_Widget = WebUI / 'asd/controlnet.py' if WebUI else None
-
-    Forge_SVD = TMP / 'svd' if ui in ['Forge', 'ReForge', 'ReForge-old'] else None
-    UNET = TMP / 'unet' if ui in ['Forge', 'ComfyUI', 'SwarmUI'] else None
-    CLIP = TMP / 'clip' if ui in ['Forge', 'ComfyUI', 'SwarmUI'] else None
 
     TMP_CKPT = TMP / 'ckpt'
     TMP_LORA = TMP / 'lora'
