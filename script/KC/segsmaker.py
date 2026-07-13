@@ -50,46 +50,22 @@ def ZROK_enable(token):
 
     else: SyS(e); print()
 
-def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=None):
+def webui_launch(launch_args, ngrok_token=None, zrok_token=None):
     iRON['PYTHONWARNINGS'] = 'ignore'
 
-    if ui in ['ComfyUI', 'SwarmUI']:
+    SyS(f"echo -n {int(time.time()) + 3600} > {CWD / 'asd/pinggytimer.txt'}")
+    launch_args += ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'
+
+    if '--share' in launch_args: launch_args = launch_args.replace('--share', '')
+    if KAGGLE: launch_args += f' --encrypt-pass={PW}'
+
+    if ui == 'Forge-Neo':
         iRON['MPLBACKEND'] = 'agg'
 
-        if ui == 'ComfyUI':
-            cfg = HOME / 'ComfyUI/custom_nodes/was-node-suite-comfyui/was_suite_config.json'
-            ffmpeg = shutil.which('ffmpeg')
+    iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
+    iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
 
-            if cfg.exists() and ffmpeg:
-                c = json.loads(cfg.read_text(encoding='utf-8'))
-                c['ffmpeg_bin_path'] = ffmpeg
-                cfg.write_text(json.dumps(c, indent=2), encoding='utf-8')
-
-            skip_comfyui_check or (SyS('python3 apotek.py'), clear_output(wait=True))
-            cmd = f'python3 main.py {launch_args}'
-
-        else:
-            for k, v in UID[ui].get('var', {}).items(): iRON[k] = v() if callable(v) else v
-            cmd = f'bash ./launch-linux.sh {launch_args}'
-
-    else:
-        SyS(f"echo -n {int(time.time()) + 3600} > {CWD / 'asd/pinggytimer.txt'}")
-        launch_args += ' --enable-insecure-extension-access --disable-console-progressbars --theme dark'
-
-        if '--share' in launch_args: launch_args = launch_args.replace('--share', '')
-        if KAGGLE: launch_args += f' --encrypt-pass={PW}'
-
-        if ui == 'Forge' and not (CWD / 'FT.txt').exists():
-            SyS('pip uninstall -qy transformers')
-            (CWD / 'FT.txt').write_text('tf')
-
-        if ui in ['ReForge', 'Forge-Neo']:
-            iRON['MPLBACKEND'] = 'agg'
-
-        iRON.setdefault('IIB_ACCESS_CONTROL', 'disable')
-        iRON.setdefault('IIB_SKIP_OPTIONAL_DEPS', '1')
-
-        cmd = f'python3 launch.py {launch_args}'
+    cmd = f'python3 launch.py {launch_args}'
 
     port = UID[ui].get('port', 7860)
 
@@ -121,7 +97,6 @@ def webui_launch(launch_args, skip_comfyui_check, ngrok_token=None, zrok_token=N
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='nothing to read here')
-    parser.add_argument('--skip-comfyui-check', action='store_true', help='Skip checking custom node dependencies for ComfyUI')
     parser.add_argument('--N', type=str, help='NGROK tunnel (pass a token or do nothing)', default=None)
     parser.add_argument('--Z', type=str, help='ZROK2 tunnel (pass a token or do nothing)', default=None)
 
@@ -130,6 +105,6 @@ if __name__ == '__main__':
 
     try:
         trashing()
-        webui_launch(launch_args, args.skip_comfyui_check, args.N, args.Z)
+        webui_launch(launch_args, args.N, args.Z)
     except KeyboardInterrupt:
         pass
