@@ -1,34 +1,64 @@
 {
-    "gradio_theme": "NoCrypt/miku",
-    "lora_preferred_name": "Filename",
-    "samples_filename_pattern": "[datetime<%M%S>]",
-    "show_progressbar": true,
-    "show_progress_grid": true,
-    "show_progress_every_n_steps": 2,
-    "live_previews_enable": true,
-    "live_previews_image_format": "webp",
-    "live_preview_allow_lowvram_full": false,
-    "live_preview_content": "Prompt",
-    "live_preview_refresh_period": 100.0,
-    "live_preview_fast_interrupt": true,
-    "grid_format": "png",
+    "show_scheduler": true,
+    "sd_checkpoint_dropdown_use_short": true,
+    "hires_fix_show_sampler": true,
+    "sd_vae": "None",
+    "CLIP_stop_at_last_layers": 2,
+    "ad_max_models": 6,
+    "control_net_unit_count": 6,
     "quicksettings_list": [
         "sd_model_checkpoint",
         "sd_vae",
-        "randn_source",
-        "emphasis"
+        "CLIP_stop_at_last_layers"
     ],
     "ui_tab_order": [
         "txt2img",
         "img2img",
-        "Extras",
         "Image Info",
         "HUB",
-        "SuperMerger"
+        "Tagger",
+        "Extensions"
+        "Settings"
+    ],
+    "ui_reorder_list": [
+        "override_settings",
+        "inpaint",
+        "sampler",
+        "dimensions",
+        "cfg",
+        "seed",
+        "checkboxes",
+        "hires_fix",
+        "extra_options",
+        "batch",
+        "scripts"
+    ],
+    "hide_samplers": [
+        "UniPC",
+        "PLMS",
+        "LMS"
     ],
     "hidden_tabs": [
+        "Extras",
         "PNG Info",
-        "Train",
-        "Checkpoint Merger"
-    ]
+        "Train"
+    ],
+    "extra_networks_default_multiplier": 0.85,
+    "samples_filename_pattern": "M=[model_name]_D=[date]",
+    "grid_save": true,
+    "grid_format": "png",
+    "grid_extended_filename": true,
+    "grid_text_active_color": "#ffffff",
+    "grid_background_color": "#0b0b0b",
+    "show_progress_grid": true,
+    "show_progress_type": "TAESD",
+    "show_progress_every_n_steps": 2,
+    "live_previews_image_format": "webp",
+    "live_preview_content": "Prompt",
+    "live_preview_refresh_period": 100.0,
+    "live_preview_fast_interrupt": true,
+    "extra_networks_card_width": 200.0,
+    "extra_networks_card_height": 300.0,
+    "extra_networks_card_text_scale": 0.8,
+    "sd_image_info_layout": "side by side"
 }
