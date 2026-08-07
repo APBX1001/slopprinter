@@ -3,7 +3,7 @@ TOBRUT = ''
 
 from IPython.core.magic import register_line_magic
 from IPython.display import display, HTML
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from IPython import get_ipython
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +14,7 @@ import requests
 import zipfile
 import shlex
 import json
+import time
 import sys
 import re
 import os
@@ -111,27 +112,116 @@ class CIVITAI:
         except Exception:
             return None
 
-    def __init__(self, data, version_id=None, domain=None):
+    @classmethod
+    def from_url(c, url):
+        url = re.sub(r'([?&])token=[^&]+', '', url).rstrip('?&')
+
+        domain = c.domain(url)
+        if not domain:
+            return None
+
+        query = parse_qs(urlparse(url).query)
+        file_id = query.get('fileId', [None])[0]
+
+        dl = f'{domain}/api/download/models/' in url
+
+        if dl:
+            version_id = url.split('models/')[1].split('/')[0].split('?')[0]
+            api_url = f'https://{domain}/api/v1/model-versions/{version_id}'
+
+        elif f'{domain}/models/' in url:
+            version_id = query.get('modelVersionId', [None])[0]
+            model_id = url.split('models/')[1].split('/')[0].split('?')[0]
+
+            api_url = (
+                f'https://{domain}/api/v1/model-versions/{version_id}'
+                if version_id else
+                f'https://{domain}/api/v1/models/{model_id}'
+            )
+
+        else:
+            return None
+
+        j = c.get_json(api_url)
+        if not j: return None
+
+        obj = c(j, version_id, file_id, domain, url=url)
+        obj.direct_link = dl
+
+        return obj
+
+    @classmethod
+    def from_sha(c, sha256):
+        for domain in c.DOMAINS:
+            api = f'https://{domain}/api/v1/model-versions/by-hash/{sha256}'
+            j = c.get_json(api)
+
+            if j:
+                obj = c(j, domain=domain, sha256=sha256)
+                if obj.exists: return obj
+
+        return None
+
+    def __init__(self, data, version_id=None, file_id=None, domain=None, sha256=None, url=None):
         self.data = data
         self.domain_name = domain
-        self.version = self.whichVersion(version_id)
+        self.version = self._v(version_id)
 
-    def whichVersion(self, version_id=None):
+        self.direct_link = False
+        self._file = None
+
+        self._r(file_id, sha256, url)
+
+    def _v(self, version_id=None):
         if 'modelVersions' not in self.data: return self.data
-
-        if version_id:
-            v = next((mv for mv in self.data['modelVersions'] if str(mv.get('id')) == str(version_id)), None)
-            if v: return v
+        if version_id: return next((mv for mv in self.data['modelVersions'] if str(mv.get('id')) == str(version_id)), self.data['modelVersions'][0])
 
         return self.data['modelVersions'][0]
 
+    def _r(self, file_id=None, sha256=None, url=None):
+        if file_id or ('?' in (url or '') and 'type=' in url):
+            self._file = self._f(file_id, url)
+            sha256 = sha256 or (self._file.get('hashes', {}).get('SHA256') if self._file else None)
+        else:
+            sha256 = sha256 or self._s(file_id, url)
+
+        if not sha256:
+            self._file = next((f for f in self.version.get('files', []) if f.get('downloadUrl')), None)
+            return
+
+        j = self.get_json(f'https://{self.domain_name}/api/v1/model-versions/by-hash/{sha256}')
+        if not j: return
+
+        self.data = j
+        self.version = self._v(self.version_id)
+
+        if not self._file: self._file = next((f for f in self.version.get('files', []) if f.get('hashes', {}).get('SHA256', '').lower() == sha256.lower()), None)
+
+    def _s(self, file_id=None, url=None):
+        if file_id: return next((f.get('hashes', {}).get('SHA256') for f in self.version.get('files', []) if str(f.get('id')) == str(file_id)), None)
+
+        if url:
+            file = next((f for f in self.version.get('files', []) if f.get('downloadUrl') == url), None)
+            if file: return file.get('hashes', {}).get('SHA256')
+
+        j = self.get_json(f'https://{self.domain_name}/api/v1/model-versions/mini/{self.version_id}')
+        return j.get('hashes', {}).get('SHA256') if j else None
+
+    def _f(self, file_id=None, url=None):
+        if file_id: return next((f for f in self.version.get('files', []) if str(f.get('id')) == str(file_id)), None)
+        if url: return next((f for f in self.version.get('files', []) if f.get('downloadUrl') == url), None)
+
+        return next((f for f in self.version.get('files', []) if f.get('downloadUrl')), None)
+
     @property
     def exists(self):
-        return self.version is not None
+        return self.file is not None
 
     @property
     def model_id(self):
-        return (self.data.get('id') or self.version.get('modelId'))
+        if 'modelVersions' in self.data: return self.data.get('id')
+
+        return self.data.get('modelId')
 
     @property
     def version_id(self):
@@ -139,16 +229,19 @@ class CIVITAI:
 
     @property
     def file(self):
-        return next((f for f in self.version.get('files', []) if f.get('downloadUrl')), None)
+        return self._file
 
     @property
     def filename(self):
-        f = self.file
-        return ((f.get('name') if f else None) or self.version.get('name'))
+        return (self.file.get('name') if self.file else None) or self.version.get('name')
 
     @property
     def sha256(self):
-        return (self.version.get('files', [{}])[0].get('hashes', {}).get('SHA256'))
+        return self.file.get('hashes', {}).get('SHA256') if self.file else None
+
+    @property
+    def download_url(self):
+        return self.file.get('downloadUrl') if self.file else None
 
     @property
     def preview_url(self):
@@ -173,11 +266,12 @@ class CIVITAI:
 
     @property
     def sd_version(self):
-        return next((s for k, s in self.BaseList.items() if k in self.version.get('baseModel', '')), '')
+        base = self.version.get('baseModel', '')
+        return next((s for k, s in self.BaseList.items() if k in base), '')
 
     @property
     def early_access(self):
-        return (self.version.get('availability') == 'EarlyAccess' or bool(self.version.get('earlyAccessEndsAt')))
+        return self.version.get('availability') == 'EarlyAccess' or bool(self.version.get('earlyAccessEndsAt'))
 
     def early_access_info(self):
         if not self.early_access: return False
@@ -185,14 +279,16 @@ class CIVITAI:
         page = f'https://{self.domain_name}/models/{self.model_id}?modelVersionId={self.version_id}'
         ends = self.version.get('earlyAccessEndsAt')
         if ends: ends = datetime.fromisoformat(ends.replace('Z', '+00:00')).strftime('%d %B %Y')
+
         print(f'{page}\n-> The model is in early access{f", ending at {ends}" if ends else ""}.')
+
         return True
 
-    def model_json(self, folder, filename=None):
+    def _json(self, folder, filename=None):
         name = filename or self.filename
         if not name: return
 
-        info = (Path(folder) / f'{Path(name).stem}.json')
+        info = Path(folder) / f'{Path(name).stem}.json'
         if info.exists(): return
 
         data = {
@@ -200,19 +296,19 @@ class CIVITAI:
             'sd version': self.sd_version,
             'modelId': self.model_id,
             'modelVersionId': self.version_id,
-            'sha256':self.sha256
+            'sha256': self.sha256,
         }
 
         info.write_text(json.dumps(data, indent=4))
 
-    def model_preview(self, folder, filename=None):
+    def _preview(self, folder, filename=None):
         name = filename or self.filename
         if not name: return
 
         preview = self.preview_url
         if not preview: return
 
-        path = (Path(folder) / f'{Path(name).stem}.preview.png')
+        path = Path(folder) / f'{Path(name).stem}.preview.png'
         if path.exists(): return
 
         r = requests.get(preview, headers=self.headers()).content
@@ -226,31 +322,26 @@ class CIVITAI:
 
     def extras(self, path, filename):
         def t():
-            self.model_json(path, filename)
-            self.model_preview(path, filename)
+            self._json(path, filename)
+            self._preview(path, filename)
 
         threading.Thread(target=t, daemon=True).start()
 
 @register_line_magic
 def download(i):
-    args = i.split()
-    if not args:
-        print('  missing URL, downloading nothing')
-        return
+    i = i.split('#', 1)[0].strip()
 
+    if not i: return
+
+    args = i.split()
     url = args[0]
     path = Path(url).expanduser()
-    if url.endswith('.txt') and path.is_file():
-        for l in path.read_text(encoding='utf-8').splitlines(): netorare(l)
-    else: netorare(i)
 
-def _url(url):
-    return (
-        CIVITAI.domain(url),
-        'huggingface.co' in url,
-        'github.com' in url or 'raw.githubusercontent.com' in url,
-        'drive.google.com' in url,
-    )
+    if url.endswith('.txt') and path.is_file():
+        for l in path.read_text(encoding='utf-8').splitlines():
+            netorare(l.split('#', 1)[0].strip())
+    else:
+        netorare(i)
 
 def netorare(line):
     fp, fn = None, None
@@ -313,7 +404,15 @@ def netorare(line):
     finally:
         CD(cwd)
 
-def _resolve(url, fn):
+def _url(url):
+    return (
+        CIVITAI.domain(url),
+        'huggingface.co' in url,
+        'github.com' in url or 'raw.githubusercontent.com' in url,
+        'drive.google.com' in url,
+    )
+
+def _res(url, fn):
     civitai, huggingface, github, _ = _url(url)
 
     if github:
@@ -327,25 +426,11 @@ def _resolve(url, fn):
 
         if fn and Path(fn).suffix.lower() in ext:
             try:
-                raw_url = re.sub(r'/(resolve|blob)/', '/raw/', url)
-                res = requests.get(raw_url, headers=headers, timeout=15)
-                t = re.search(r'oid sha256:([a-fA-F0-9]{64})', res.text)
+                raw = re.sub(r'/(resolve|blob)/', '/raw/', url)
+                r = requests.get(raw, headers=headers, timeout=15)
 
-                if t:
-                    sha256 = t.group(1).lower()
-
-                    for u in CIVITAI.DOMAINS:
-                        try:
-                            api_url = f'https://{u}/api/v1/model-versions/by-hash/{sha256}'
-
-                            j = CIVITAI.get_json(api_url)
-                            if not j: continue
-
-                            r = next((f for f in j.get('files', []) if f.get('hashes', {}).get('SHA256', '').lower() == sha256), None)
-                            if r: c = CIVITAI(j, domain=u); break
-
-                        except Exception:
-                            continue
+                if t := re.search(r'oid sha256:([a-fA-F0-9]{64})', r.text):
+                    c = CIVITAI.from_sha(t.group(1).lower())
 
             except Exception:
                 pass
@@ -354,46 +439,17 @@ def _resolve(url, fn):
         return (url, c, fn)
 
     elif civitai:
-        input_url = url
-        url = url.split('?token=')[0]
+        c = CIVITAI.from_url(url)
 
-        if f'{civitai}/api/download/models/' in url:
-            version_id = url.split('models/')[1].split('/')[0].split('?')[0]
-            api_url = f'https://{civitai}/api/v1/model-versions/{version_id}'
+        if not c: return (None, None, None)
+        if c.early_access_info(): return (None, None, None)
 
-            j = CIVITAI.get_json(api_url)
-            if not j: return (url, None, None)
-
-            c = CIVITAI(j, version_id, civitai)
-            if not c.file: return (url, None, None)
-
-            return (url, c, fn or c.filename)
-
-        elif f'{civitai}/models/' in url:
-            version_id = None
-            model_id = url.split('models/')[1].split('/')[0].split('?')[0]
-
-            if '?modelVersionId=' in url: version_id = url.split('?modelVersionId=')[1].split('&')[0]
-
-            api_url = (f'https://{civitai}/api/v1/model-versions/{version_id}' if version_id else f'https://{civitai}/api/v1/models/{model_id}')
-
-            j = CIVITAI.get_json(api_url)
-            if not j: return (None, None, None)
-
-            c = CIVITAI(j, version_id, civitai)
-
-            if c.early_access_info(): return (None, None, None)
-
-            if not c.file:
-                print(f'Unable to find download URL for\n-> {input_url}\n')
-                return (None, None, None)
-
-            return (c.file['downloadUrl'], c, fn or c.filename)
+        return (c.download_url, c, fn or c.filename)
 
     return (url, None, fn)
 
 def ariari(url, fp, fn):
-    url, c, fn = _resolve(url, fn)
+    url, c, fn = _res(url, fn)
     if not url: return
 
     civitai, huggingface, *_ = _url(url)
@@ -414,74 +470,82 @@ def ariari(url, fp, fn):
     cmd = [
         'aria2c',
         f"--header=User-Agent: {headers['User-Agent']}",
-        '--allow-overwrite=true', '--console-log-level=error', '--stderr=true',
-        '-c', '-x16', '-s16', '-k1M', '-j5' 
+        *([f'--header=Authorization: Bearer {TOBRUT}'] if TOBRUT and huggingface else ()),
+        '--allow-overwrite=true',
+        '--console-log-level=error',
+        '--stderr=true',
+        '-c', '-x16', '-s16', '-k1M',
+        *(['-o', fn] if fn else ()),
+        url,
     ]
-
-    if TOBRUT and huggingface: cmd.append(f'--header=Authorization: Bearer {TOBRUT}')
-    if fn: cmd += ['-o', fn]
-
-    cmd.append(url)
 
     try:
         if c: c.extras(fp, fn)
 
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        aria2_output, bl, error_code, error_line = '', False, [], []
+        for i in range(20 if huggingface else 1):
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            aria2_output, bl, error_code, error_line = '', False, [], []
 
-        while True:
-            lines = p.stderr.readline()
-            if lines == '' and p.poll() is not None: break
+            while True:
+                lines = p.stderr.readline()
+                if lines == '' and p.poll() is not None:
+                    break
 
-            if lines:
-                aria2_output += lines
+                if lines:
+                    aria2_output += lines
 
-                for prog in lines.splitlines():
-                    if 'errorCode' in prog or 'Exception' in prog:
-                        error_code.append(prog)
+                    for prog in lines.splitlines():
+                        if 'errorCode' in prog or 'Exception' in prog:
+                            error_code.append(prog)
 
-                    if '|' in prog and 'error_line' in prog:
-                        prog = re.sub(r'(\|\s*)(error_line)(\s*\|)', f'\\1{RED}\\2{RESET}\\3', prog)
-                        first, _, last = prog.rpartition('|')
-                        last = re.sub(r'/', f'{CYAN}/{RESET}', last)
-                        prog = f'{first}|{last}'
-                        error_line.append(prog)
+                        if '|' in prog and 'error_line' in prog:
+                            prog = re.sub(r'(\|\s*)(error_line)(\s*\|)', f'\\1{RED}\\2{RESET}\\3', prog)
+                            first, _, last = prog.rpartition('|')
+                            last = re.sub(r'/', f'{CYAN}/{RESET}', last)
+                            prog = f'{first}|{last}'
+                            error_line.append(prog)
 
-                    m = re.match(
-                        r'\[#\w+\s+'
-                        r'(?:(\d+(?:\.\d+)?\w+/\d+(?:\.\d+)?\w+))?'
-                        r'\((\d+%)\)'
-                        r'.*?DL:(\d+(?:\.\d+)?\w+)'
-                        r'(?:.*?ETA:(\d+\w+))?',
-                        prog
-                    )
+                        m = re.match(
+                            r'\[#\w+\s+'
+                            r'(?:(\d+(?:\.\d+)?\w+/\d+(?:\.\d+)?\w+))?'
+                            r'\((\d+%)\)'
+                            r'.*?DL:(\d+(?:\.\d+)?\w+)'
+                            r'(?:.*?ETA:(\d+\w+))?',
+                            prog
+                        )
 
-                    if m:
-                        sizes, percent, speed, eta = m.groups()
+                        if m:
+                            sizes, percent, speed, eta = m.groups()
 
-                        percent = re.sub(r'(\d+)(%)', f'\\1{PURPLE}\\2{RESET}', percent)
-                        parts = [f'{MAGENTA}({RESET}{percent}{MAGENTA}){RESET}']
+                            percent = re.sub(r'(\d+)(%)', f'\\1{PURPLE}\\2{RESET}', percent)
+                            parts = [f'{MAGENTA}({RESET}{percent}{MAGENTA}){RESET}']
 
-                        if sizes:
-                            current, total = sizes.split('/')
-                            current = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', current)
-                            total = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', total)
-                            parts.append(f'{current}{CYAN}/{RESET}{total}')
+                            if sizes:
+                                current, total = sizes.split('/')
+                                current = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', current)
+                                total = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', total)
+                                parts.append(f'{current}{CYAN}/{RESET}{total}')
 
-                        speed = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', speed)
-                        parts.append(f'{CYAN}DL{RESET}:{speed}')
+                            speed = re.sub(r'(\d+(?:\.\d+)?)(\w+)', f'\\1{PURPLE}\\2{RESET}', speed)
+                            parts.append(f'{CYAN}DL{RESET}:{speed}')
 
-                        if eta: parts.append(f'{CYAN}ETA{RESET}:{YELLOW}{eta}{RESET}')
+                            if eta:
+                                parts.append(f'{CYAN}ETA{RESET}:{YELLOW}{eta}{RESET}')
 
-                        body = ' '.join(parts)
+                            body = ' '.join(parts)
 
-                        print(f"\r{' '*300}\r  {RED}●{RESET} {fn} {body}", end='')
-                        sys.stdout.flush()
+                            print(f"\r{' '*300}\r  {RED}●{RESET} {fn} {body}", end='')
+                            sys.stdout.flush()
 
-                        bl = True
-                        break
+                            bl = True
+                            break
 
-        p.wait()
+            p.wait()
+
+            if not (huggingface and p.returncode and 'xet-bridge' in aria2_output and 'status=403' in aria2_output):
+                print('\r' + ' ' * 80 + '\r', end=''); sys.stdout.flush(); break
+
+            print(f'\r  retrying {fn or url} [{i+1}/20]', end=''); sys.stdout.flush(); time.sleep(1)
 
         if p.returncode:
             for line in error_code + error_line:
@@ -497,10 +561,11 @@ def ariari(url, fp, fn):
                     sys.stdout.flush()
                     bl = False
 
-        bl and print()
+        if bl:
+            print()
 
     except KeyboardInterrupt:
-        print(f'\n{"":>2}^ Canceled')
+        print('\n  ^ Canceled')
 
 def curlly(cmd, fn):
     try:
@@ -611,7 +676,7 @@ def gdrown(url, fp=None, fn=None):
     except KeyboardInterrupt:
         try: p.terminate()
         except: pass
-        print(f'\n{"":>2}^ Canceled')
+        print('\n  ^ Canceled')
 
 @register_line_magic
 def clone(i):
